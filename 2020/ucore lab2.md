@@ -2,16 +2,19 @@
 title: ucore lab2
 date: 2019/9/29 13:46:25
 categories:
-- OS
+- Dev
 tags:
+- OS
 - ucore
 ---
 
 # ucore lab2
+
 继续看Intel 80386 Programmer's Reference Manual, 1987 (HTML)
 http://www.logix.cz/michal/doc/i386/
 再看Intel® 64 and IA-32 Architectures Software Developer Manuals
 https://software.intel.com/en-us/articles/intel-sdm
+
 <!-- more -->
 
 ### 内存管理

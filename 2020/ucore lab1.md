@@ -2,14 +2,16 @@
 title: ucore lab1
 date: 2019/9/29 13:46:25
 categories:
-- OS
+- Dev
 tags:
+- OS
 - ucore
 ---
 
 # ucore lab1
 上来先看看Intel 80386 Programmer's Reference Manual, 1987 (HTML)吧。
 http://www.logix.cz/michal/doc/i386/
+
 <!-- more -->
 
 

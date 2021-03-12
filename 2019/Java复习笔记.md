@@ -2,10 +2,9 @@
 title: Java复习笔记
 date: 2019/6/25 20:46:25
 categories:
-- 大学
+- Notes
 tags:
-- java
-- 开发
+- Java
 ---
 
 

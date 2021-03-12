@@ -2,14 +2,15 @@
 title: main函数启动与POSIX-ABI
 date: 2020/1/29 20:46:25
 categories:
-- CTF
+- Hack
 tags:
-- linux
+- Linux
 - CTF
 ---
 
 
 # main函数启动与POSIX-ABI
+
 <!-- more -->
 
 https://0xax.gitbooks.io/linux-insides/content/Misc/linux-misc-4.html
