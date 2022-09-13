@@ -26,8 +26,7 @@ tags:
 
 加密必须要用户名和密码, 因为加密的会话密钥就是和用户名关联的. 因此为了guest用户, 需要注释掉加密的选项.
 
-来自[How to enable SAMBA encryption and do not require user authentication
-](https://serverfault.com/questions/874423/how-to-enable-samba-encryption-and-do-not-require-user-authentication)
+来自[How to enable SAMBA encryption and do not require user authentication](https://serverfault.com/questions/874423/how-to-enable-samba-encryption-and-do-not-require-user-authentication)
 
 ## 关键配置2
 ```
@@ -115,3 +114,4 @@ sudo smbd -F -S -d=10
 ```
 此时再连接, 就可以看到debug信息了. -d指定的loglevel从1到10.
 `-d=5`的时候的log就已经很多了, `-d=3` 的时候log不是很多.平时一般先使用 `-d=3`
+

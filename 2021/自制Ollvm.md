@@ -16,7 +16,7 @@ tags:
 <!-- more -->
 
 ollvm/armariris/hikari 三个一起学习.
-[ollvm/armariris/hikari 适配llvm10](https://www.leadroyal.cn/?p=1072)
+[ollvm/armariris/hikari 适配llvm10](https://www.leadroyal.cn/?p=1072) 
 
 http://mayuyu.io/ 这里有很多关于llvm的
 
@@ -340,7 +340,7 @@ llvm.global.annotations的声明中，最开头的`[2 x { i8*, i8*, i8*, i32 }]`
 
 ### Pass中的解析方法
 
-首先获取Module级别的全局变量llvm.global.annotations
+首先获取Module级别的全局变量 llvm.global.annotations 
 
 ```
 GlobalVariable *glob =
@@ -406,9 +406,7 @@ TODO：能否（简单地）一个命令行开启两个Pass？呃，那个Regist
 
 在Windows平台编译不是一个简单的问题，需要各种支持。现在虽然难，但似乎有人成功了。
 
-安装
-
-了tdm-Gcc之后用如下的选项编译
+安装了tdm-Gcc之后用如下的选项编译
 
 ```
 cmake -G Ninja -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_EXPORT_SYMBOLS_FOR_PLUGINS=On ..\llvm
@@ -581,3 +579,4 @@ TODO 确实会留下原来被代替的指令。需要在合适的时候调用`bo
 ```
  i = vec.erase(i); 
 ```
+
