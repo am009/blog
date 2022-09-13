@@ -63,7 +63,7 @@ QueryInterface()
 
 `Wrapper -> YourClass -> Internal` 
 
-![COM](COM与RPC/COM.jpg)
+![COM](COM.jpg)
 
 `CComObject` 对应继承模型，如下
 

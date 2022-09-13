@@ -16,7 +16,7 @@ tags:
 <!-- more -->
 
 ollvm/armariris/hikari 三个一起学习.
-[ollvm/armariris/hikari 适配llvm10](https://www.leadroyal.cn/?p=1072) 
+[ollvm/armariris/hikari 适配llvm10](https://www.leadroyal.cn/?p=1072)
 
 http://mayuyu.io/ 这里有很多关于llvm的
 
@@ -340,7 +340,7 @@ llvm.global.annotations的声明中，最开头的`[2 x { i8*, i8*, i8*, i32 }]`
 
 ### Pass中的解析方法
 
-首先获取Module级别的全局变量 llvm.global.annotations 
+首先获取Module级别的全局变量 llvm.global.annotations
 
 ```
 GlobalVariable *glob =
@@ -549,7 +549,7 @@ TODO 描述编译经历
 
 真正核心的替换函数，参数只是那个指令`BinaryOperator *bo`。
 
-![image-20200928135000792](自制Ollvm/image-20200928135000792.png)
+![image-20200928135000792](image-20200928135000792.png)
 
 addNeg：增加一个Neg指令，把加法变成减法。addDoubleNeg同理。
 
