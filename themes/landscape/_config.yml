@@ -2,7 +2,7 @@
 menu:
   Home: /
   Archives: /archives
-rss: /atom.xml
+  Author's Github: https://github.com/am009
 
 # Content
 excerpt_link: Read More
