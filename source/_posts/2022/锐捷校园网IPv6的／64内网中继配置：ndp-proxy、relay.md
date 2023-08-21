@@ -84,7 +84,7 @@ NDP，这里主要关注NS和NA，可以想象成是IPv4的ARP。即，我知道
 
    2. 关键的规则就只有一个，即`ether type ip6 dup to "br-lan"`。把所有ipv6包都复制一份进来。但是在lan这边，链路层肯定是不太对的，源mac地址是路由器lan网卡，目的mac地址应该是内网机器的网卡mac。`ether type ip6 ether saddr set xx:xx:xx:xx:xx:xx dup to "br-lan"`虽然改了源MAC地址，但是不知道目的mac地址怎么改了。。。有没有简单的办法知道目的mac地址吗？但是其实这就是NDP做的事情啊。。。如果NDP完美了，上面的方案也就完美了。
 
-      1. 非常神奇的一件事情是，如果你此时正好在wireshark抓包，会发现自己的ipv6是好的。一旦关掉wireshark，ipv6就没了。可能和网卡是否在混杂模式有关。
+      1. 非常神奇的一件事情是，如果你此时正好在wireshark抓包，会发现自己的ipv6是好的。一旦关掉wireshark，ipv6就没了。可能和网卡是否在混杂模式有关。（值得试一试，即此时再将网卡打开嗅探模式，是否内网v6能正常工作）
 
 3. 既然上面NDP proxy的问题是不能抓自己发出的NS包，那我直接用nftables规则把NS包复制一份到LAN口不就行了吗。（话说内核不能直接指定一下，NS包往多个接口发吗，反正目的地址都是广播地址。只要我路由器往LAN发了NS包，自然就知道内网有neighbor了。）（也许是经过路由表路由了）
 

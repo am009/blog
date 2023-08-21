@@ -11,5 +11,5 @@ Dev Hack Notes Digi Read Project
 已有的Tag：
 
 ```
-Embedded CTF Java Linux OS ucore rcore Windows Raspberrypi LLVM PL StaticAnalysis Decompile Android Compiler WebAssembly Networking Openwrt
+Embedded CTF Java Linux OS ucore rcore Windows Raspberrypi LLVM PL StaticAnalysis Decompile Android Compiler WebAssembly Networking Openwrt Scientific
 ```
