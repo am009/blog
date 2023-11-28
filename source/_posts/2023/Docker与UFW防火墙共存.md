@@ -1,5 +1,5 @@
 ---
-title: Docker与防火墙共存-UFW
+title: Docker与UFW防火墙共存
 date: 2023/5/12 11:11:12
 categories:
 - Dev
@@ -8,9 +8,11 @@ tags:
 - Networking
 ---
 
-Docker与防火墙共存-UFW
+Docker与UFW防火墙共存
 
 <!-- more -->
+
+2023年9月22日 最终还是完全放弃了这个方案，这个方案在docker重启的时候会出现问题，把重启ufw和重启docker关联起来是很有问题的，确实在forward链上做防护更好。
 
 “众所周知”，Docker和UFW（ubuntu自带的防火墙，Uncomplicated Firewall）等一系列防火墙都是不太能共存的。但是最近学校护网，需要打开防火墙。
 

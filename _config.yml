@@ -116,3 +116,16 @@ search:
   field: post
   content: true
   format: html
+
+feed:
+  enable: true
+  type: rss
+  path: rss.xml
+  limit: 20
+  hub:
+  content:
+  content_limit: 140
+  content_limit_delim: ' '
+  order_by: -date
+  autodiscovery: true
+  template:
