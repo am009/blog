@@ -7,7 +7,7 @@ tags:
 - Java
 ---
 
-Maven，如果想要修改底层依赖的库，先clone下来修改构建，然后使用本地JAR文件。StackOverflow的高赞回答里有一些坑。记录一下。
+Maven，如果想要修改底层依赖的库，先clone下来修改构建，然后使用本地JAR文件。StackOverflow的高票回答里有一些坑。记录一下。
 
 <!-- more -->
 

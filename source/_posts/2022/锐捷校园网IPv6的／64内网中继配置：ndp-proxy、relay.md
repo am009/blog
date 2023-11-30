@@ -54,9 +54,9 @@ NDP，这里主要关注NS和NA，可以想象成是IPv4的ARP。即，我知道
 
 其实现在ipv6已经非常接近正常了，也就是发现没有ipv6的时候要ping一下路由器。在Openwrt上的配置也非常简单：（这里假设interface wan的协议是dhcpv4 client，interface wan6的协议是dhcpv6 client，并且路由器自身ipv6已经正常）
 
-1. Interfaces » WAN » DHCP server » IPv6 Settings里，勾选Designated Master，RA 设置relay，DHCPv6 禁用，NDP proxy设置relay。**勾选learn routes。**
+1. Interfaces » WAN6 » DHCP server » IPv6 Settings里，勾选Designated Master，RA 设置relay，DHCPv6 禁用，NDP proxy设置relay。**勾选learn routes。**
 2. Interfaces » LAN » DHCP server » IPv6 Settings里，不能勾选Designated Master，RA 设置relay，DHCPv6 禁用，NDP proxy设置relay。**勾选learn routes。**
-3. 注意wan的IPv6 Settings就别动了，全禁用。这边设置relay会导致RA通过wan转发到外面去。
+3. 注意wan的IPv6 Settings就别动了，全禁用。wan和wan6一起设置relay会导致RA通过wan转发到外面去。
 
 其实可以就这样将就着用了。
 
