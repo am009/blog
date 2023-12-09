@@ -11,9 +11,9 @@ Fuzz快速上手指南
 
 <!-- more -->
 
-不得不说，学习使用LibAFL的过程，就是学习Fuzz架构的过程。基于LibAFL的baby fuzzer教程，就可以了解到fuzzer的架构。
+不得不说，学习使用LibAFL的过程，就是学习Fuzz架构的过程。基于LibAFL的baby fuzzer教程，就可以了解到fuzzer的架构。LibAFL是基于Rust语言，高度可自定义的组件化fuzzer。他们的开发者正尝试用LibAFL复刻AFL++，libfuzzer等多个知名fuzzer，这足以说明LibAFL的强大。
 
-Fuzzing的很重要的一部分就是调试崩溃和修复漏洞。这个和fuzz本身一样重要。
+Fuzzing的很重要的一部分就是调试崩溃和修复漏洞。这个和fuzz本身一样重要。这个暂时没涉及
 
 本文涵盖以下内容：
 
@@ -21,6 +21,9 @@ Fuzzing的很重要的一部分就是调试崩溃和修复漏洞。这个和fuzz
     - PCGUARD模式
     - cmplog/input to state/redqueen
 - Mutators
+  - honggfuzz中的Mutator
+  - AFL中的splice和havoc
+  - MOpt
 
 ### 学习资源
 
@@ -108,7 +111,7 @@ PCGUARD是AFL的默认模式，名字[可能源自插桩pass的名字](https://s
 - `cmplog`/`input to state`/`redqueen`：当出现这种多字节比较的时候，对应的字节会被反馈给AFL++，作为关键词用于mutate填充。这种方式比前一种更加高效。
 
 
-## Mutators
+## Mutation
 
 [LibAFL里对Mutator的介绍](https://aflplus.plus/libafl-book/core_concepts/mutator.html)很简单。Mutator是一个[Trait](https://docs.rs/libafl/0.11.1/libafl/mutators/trait.Mutator.html)，包含两个函数，mutate和post_exec。同时，[Stage](https://aflplus.plus/libafl-book/core_concepts/stage.html)也很重要，Mutational Stage也会对语料库里的输入进行修改。
 
@@ -139,6 +142,8 @@ honggfuzz的mutator就放在最外层的`honggfuzz/mangle.c`和`mangle.h`里。�
 
 ### AFL中的splice和havoc
 
+> 第一次进行变异的种子文件首先要进入deterministic stage，在这一阶段每个变异操作会对种子文件的每个byte或者bit进行变异，以此生成庞大数量的测试用例来测试目标程序。在结束了deterministic stage后，进入havoc stage，AFL从变异操作中随机选Ro个对种子文件进行变异，并使用变异后的测试用例来测试程序。第三个阶段是splicing stage，进入这一阶段的判断条件很苛刻，如果AFL变异了seed pool中的所有种子文件，得到的测试用例仍然没有发现新的interesting test cases，AFL才会执行这一阶段，splicing stage只执行一个变异操作：随机选取另一个种子文件，将它和当前文件的部分内容拼接在一起，然后重新进入havoc stage进行变异。（摘自[InForSec通讯](https://www.inforsec.org/wp/?p=3950)）
+
 AFL的[文档](https://afl-1.readthedocs.io/en/latest/user_guide.html)里有下面的介绍：
 
 > havoc - a sort-of-fixed-length cycle with stacked random tweaks. The operations attempted during this stage include bit flips, overwrites with random and “interesting” integers, block deletion, block duplication, plus assorted dictionary-related operations (if a dictionary is supplied in the first place).
@@ -152,3 +157,26 @@ splice会选择两个输入，在某个位置把它们拼接起来。
 其他介绍：
 
 - [AFL-变异策略](https://www.zrzz.site/posts/49460ecb/)
+
+### MOpt: Optimized Mutation Scheduling for Fuzzers
+
+[InForSec通讯](https://www.inforsec.org/wp/?p=3950)
+
+MOpt这篇paper，改进了AFL里面havoc阶段的Scheduler的过程。
+
+LibAFL里也实现了这篇paper的方法。
+
+### LibAFL里其他的mutation机制
+
+LibAFL的mutation stage的主要逻辑在这个[`perform_mutational`](https://github.com/AFLplusplus/LibAFL/blob/d53503b73ea0425ffdcfbc467c167b02632077b6/libafl/src/stages/mutational.rs#L118)函数。
+
+- 首先确定为了当前输入，打算进行多少次mutate，存入变量num。
+- MutatedTransform机制，可以根据testcase和state转换输入，目前似乎只是从TestCase解出input。
+- 循环num次
+  - 复制一份输入
+  - 对输入调用mutator变换：mutator可以返回MutationResult::Skipped，表示变换失败，直接continue
+  - 运行输入，判断是否interesting（`fuzzer.evaluate_input`）。
+    - evaluate_input_with_observers：执行程序，执行observer，执行`scheduler.on_evaluation`，执行`process_execution`。
+      - process_execution这里会判断是否找到bug（`ExecuteInputResult::Solution`），或者interesting（`ExecuteInputResult::Corpus`），或者都不是。
+        - 对于interesting的输入，复制
+  - 执行Mutator的post_exec
