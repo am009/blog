@@ -1,5 +1,5 @@
 ---
-title: 类型和程序设计语言
+title: PL基础入门
 date: 2023/11/27 11:11:12
 categories:
 - Read
@@ -7,17 +7,22 @@ tags:
 - PL
 ---
 
-类型和程序设计语言
+## 资源
+
+- [Stanford CS242 Programming Languages](https://csdiy.wiki/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%88%86%E6%9E%90/CS242/#_1)
+- [[POPL'22 Tutorial] Program Analysis via Graph Reachability: Past, Present, and Future](https://helloqirun.github.io/misc/popl22.html)
 
 <!-- more -->
 
+## 《类型和程序设计语言》
+
 还记得最早学编程的时候，会去想函数是什么。而现在，脑海里自动出现什么调用栈，返回地址。也许类型系统是当初就应该学的。
 
-## 第一部分 无类型系统
+### 第一部分 无类型系统
 
 无类型系统是图灵完全的。当整个系统中只有函数的形式，一切都是函数的树的形式，信息也被存储在函数的树状结构中。
 
-### 第三章 无类型算术表达式
+#### 第三章 无类型算术表达式
 
 本章讨论的是布尔和数的无类型演算。
 
