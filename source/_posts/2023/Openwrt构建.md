@@ -32,22 +32,7 @@ Openwrt构建
 
 - [在feed中增加`src-link`](https://openwrt.org/docs/guide-developer/toolchain/use-buildsystem#creating_a_local_feed)，关联本地源码。
 
-
-### 给netifd提交代码
+### 给核心仓库提交代码
 
 - [Submitting patches](https://openwrt.org/submitting-patches)页面，提到了核心包可以通过Github PR或者邮件列表提交。
 - [这个Patch](https://lists.openwrt.org/pipermail/openwrt-devel/2024-January/041977.html)先出现在邮件列表，然后[commit](https://git.openwrt.org/?p=project/netifd.git;a=commit;h=4219e99eeec7514657f5838eb4b4b5eb28ee1271)才出现在netifd的列表里，说明他们还是在用mailing list的，可以考虑直接写patch交patch。
-
-## 如何增加GRETap的Flag
-
-上一篇文章 《Openwrt的GRETap隧道的MTU问题》 里提到：
-
-> **Package GRE**：先看看GRE包的[源码](https://github.com/openwrt/openwrt/blob/ae500e62e2938e112ae1fc6aa7389e8c7b784b13/package/network/config/gre/files/gre.sh)吧，稍微看看就可以发现，这里调的是`proto_send_update`，是`netifd-proto.sh`里面的函数。引用到了另外一个仓库：`netifd`。而`netifd`并不是调的ip link命令，而是直接C语言底层实现相关操作。
-> 
-> 总之，抓住这一点：netifd不支持`ignore-df nopmtudisc`这两个选项，就可能可以给他们交patch吧？应该。
-
-ip link命令又是怎么实现这个功能的呢？ip这个命令行工具来自`iproute2`包，搜索相关源码可以找到[`link_gre.c`](https://github.com/iproute2/iproute2/blob/0c3400cc8f576b9f9e4099b67ae53596111323cd/ip/link_gre.c#L398)这里。可以发现在`linux/if_tunnel.h`这个内核头文件里有个flag叫`IFLA_GRE_PMTUDISC`。这里操纵的是`struct nlmsghdr`结构体，那边netifd也是一样。
-
-### 编写邮件和commit message
-
-
