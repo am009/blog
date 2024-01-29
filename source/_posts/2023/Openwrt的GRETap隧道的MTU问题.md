@@ -1,5 +1,5 @@
 ---
-title: Openwrt的GRETap遇到MTU问题
+title: Openwrt的GRETap隧道的MTU问题
 date: 2023/11/06 11:11:12
 categories:
 - Dev

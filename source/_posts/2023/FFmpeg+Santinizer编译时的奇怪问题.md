@@ -11,7 +11,7 @@ FFmpeg+Santinizer编译时的奇怪问题，不得不感叹软件世界的复杂
 
 <!-- more -->
 
-fuzzbench里编译ffmpeg的时候出现了奇怪的编译报错（剧透：和sanitizer有关系），首先上来就说我符号找不到，而且很多。搜了一下发现大多都是汇编里的符号，ffmpeg里面很多手写的汇编代码，直接和C语言链接起来。
+在[参与SBFT'24 Fuzzing competition](https://github.com/am009/fuzzbench/tree/SBFT24)时遇到了这个bug。fuzzbench里编译ffmpeg的时候出现了奇怪的编译报错（剧透：和sanitizer有关系），首先上来就说我符号找不到，而且很多。搜了一下发现大多都是汇编里的符号，ffmpeg里面很多手写的汇编代码，直接和C语言链接起来。
 
 ```
 ld.lld: error: undefined symbol: ff_yuv2yuv_422p10to8_sse2
