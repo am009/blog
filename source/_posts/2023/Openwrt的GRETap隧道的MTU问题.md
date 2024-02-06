@@ -18,7 +18,7 @@ Openwrt的GRETap6隧道的MTU问题
 **诊断**：
 
 - 这个[Reddit帖子](https://www.reddit.com/r/sysadmin/comments/737c1z/friendly_reminder_if_ssh_sometimes_hangs/)提到这种SSH连接停住的现象很可能是MTU问题。确实很可能是MTU的问题。通过直接把笔记本接到那边路由器，或者连那边的wifi，问题都不再出现。
-- 这个人也有[IPv6 GRETap的MTU问题](https://www.reddit.com/r/ipv6/comments/pmxg2m/ipv6_mtu_issue_with_hosts_behind_mikrotik_router/)
+- 这个人也有[IPv6 GRETap的MTU问题](https://forum.vyos.io/t/ip6gre-and-fragmentation/11710)
 
 **Path MTU Discovery (PMTUD)原理**：虽然本地机子的MTU不会变，但是发包后路由器就会返回icmp消息说，你太长了，然后本地机子就会用mtu1300.
 
@@ -41,4 +41,6 @@ ip link命令又是怎么实现这个功能的呢？ip这个命令行工具来�
 
 然而，[这里](https://github.com/openwrt/netifd/blob/f01345ec13b9b27ffd314d8689fb2d3f9c81a47d/system-linux.c#L4012)可以看到，仅对IPv4的隧道支持了`ignore-df`选项。在[ip命令的帮助](https://man7.org/linux/man-pages/man8/ip-tunnel.8.html)里可以发现，ignore-df选项仅忽略IPv4的Dont Fragment包。
 
-[这里](https://www.reddit.com/r/ipv6/comments/pmxg2m/ipv6_mtu_issue_with_hosts_behind_mikrotik_router/)提到了，在IPv6里根本没有分包，必须由中间节点发icmp6消息提醒发送端减少MTU。很可能这个问题是无解的，只能改自己本地MTU？
+[这里](https://www.reddit.com/r/ipv6/comments/pmxg2m/ipv6_mtu_issue_with_hosts_behind_mikrotik_router/)和[这里](https://forum.vyos.io/t/ip6gre-and-fragmentation/11710)提到了，在IPv6里根本没有分包，必须由中间节点发icmp6消息提醒发送端减少MTU。很可能这个问题是无解的，只能改自己本地MTU？
+
+这个[RFC文档](https://www.rfc-editor.org/rfc/rfc7588.html)提到了一些实现，有些厂商为了解决这个问题而手动实现了分包。
