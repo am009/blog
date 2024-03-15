@@ -14,7 +14,7 @@ tags:
 ### 相关工具
 
 - [git-latexdiff-web](https://github.com/am009/git-latexdiff-web)：上传两个overleaf压缩包，运行git-latexdiff，返回一个可以看出有哪些修改的pdf。可以在其他人帮改paper后得到反馈。
-- [翻译机器人Poe](https://poe.com/WritingChinese)：直接输入中文，内置提示词会让LLM将内容直接翻译为英文。
+- [Poe翻译机器人](https://poe.com/TranslatingChinese)：直接输入中文，内置提示词会让LLM将内容直接翻译为英文。
 
 ## 学习路线
 
@@ -141,6 +141,9 @@ al. [7]
 
 - 对于容量，可以直接用全大写的MB，虽然MiB更精确，但是实际上都行。
 
+## rebuttal
+
+最直接的想法当然是，针对review提出的问题，直接列表一个个回答便是。但是，review经常会，完全不记得问题的上下文。因此这种方式容易导致review想不起来之前的问题。因此要注意重新介绍一下相关的上下文。
 
 ## 其他
 
