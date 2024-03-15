@@ -7,7 +7,7 @@ tags:
 - Networking
 ---
 
-Openwrt的GRETap6隧道的MTU问题
+TLDR：如何使用GRE Tap隧道不会遇到MTU问题？使用IPv4连接，同时关闭GRE接口配置中的“设置Don't Fragment”选项
 
 <!-- more -->
 
@@ -51,6 +51,14 @@ Linux内核的GRE隧道，最近支持了`ignore-df nopmtudisc`选项。（如�
 不断抓包，使用nping命令直接发送以太网包发现，IPv6和IPv4的MTU居然不一样。先把网卡MTU配置为2000。首先使用`nping -c 1 --icmp --dest-mac 00:0C:29:72:2D:59 1.1.1.1 --data-length 1954` 可以发出总大小为2000的以太网包。但是如果转而想发送IPv6，使用 `ping -s 11472 -Mdo 2001:250:4000:511d:114:514:1919:810` 提示`ping: local error: message too long, mtu: 1500`。
 
 进一步搜索找出了问题的根源：IPv6的RA路由通告会通告当前网段的MTU大小。通过设置静态地址，忽略RA，可以使得MTU正确地变成网卡配置的MTU。
+
+## MSS Clamping
+
+[这个视频](https://blog.ipspace.net/2013/01/tcp-mss-clamping-what-is-it-and-why-do.html?m=1)很好地介绍了MSS Clamping的原理。
+
+如果链路中MTU出现了问题，则每次都得发送一个PMTUD的消息，减小传输大小，然后才能正常通信。这在每次通信时都增加了一个round trip的延迟开销
+
+MSS是TCP的一个协商出来的参数，也是最大的传输大小。路由器防火墙(在Masquerade的同时？)，如果发现链路的MTU很小，可以在协商的时候把TCP的MSS直接弄小一点。这样就直接省去了这个round trip步骤。
 
 ### 其他
 
