@@ -11,47 +11,42 @@ tags:
 
 <!-- more -->
 
-### 相关工具
+### 资料和工具
 
+- How to Write a Good Scientific Paper 作者：Chris. A. Mack.
+- [How to Write a Great Research Paper](https://simon.peytonjones.org/great-research-paper/)  Simon Peyton Jones
 - [git-latexdiff-web](https://github.com/am009/git-latexdiff-web)：上传两个overleaf压缩包，运行git-latexdiff，返回一个可以看出有哪些修改的pdf。可以在其他人帮改paper后得到反馈。
-- [Poe翻译机器人](https://poe.com/TranslatingChinese)：直接输入中文，内置提示词会让LLM将内容直接翻译为英文。
-
-## 学习路线
-
-没有不能克服的困难。写paper看似很难，实际上是由一些没那么难的事情组合而成。想起我之前写作卡出半天写不出一句话，有时候是逻辑理不清楚的问题，有时候是英语语法语料不足，想表达一句话不能很好地表达出来。每次写都是花费大量时间，憋不出两三句话，每次都很难受，想到就抑郁。
-
-先写中文是有帮助的。能够清楚地知道自己往往遇到的是逻辑问题，而不是英语表达能力的问题。速度就是质量，真正好的文章是改出来的，如果不能以很快的速度进行这个过程，那么就很可能不能在自己可接受的时间范围内写出“还看得过去”的paper内容，自己也会非常折磨。可以在文档中自己分两栏，比如用个两列的列表，左边放中文，右边放英文。每次同时修改两边内容。
-
-在分离了语言这个困难后，其次是讲求逻辑，有明确的逻辑关系。优先看自己是不是完全写清楚了，其次是考虑篇幅等其他问题。往往会发现越写越多，然后超出内容，然后开始精简，这也是写paper的必经之路。后面再删，删的时候优先选择必要的逻辑，次要的注释掉。
-
-最后，需要注意，语言是一种艺术。必须要让自己的语言能够以最简单的方式被看懂。首先，任何逻辑上复杂的弯都最好理顺，①进一步增加自己paper的受众，让更多人能看懂，②很有可能reviewer在看你paper的时候很累，思维也并不是很清晰。其次，为了段落结构的清晰，可以通过调整句子，让自己每个段落想表达什么都明确出来。比如，介绍自己paper主要思想时，我们往往并不会写：“The main idea of our paper is that xxxx.”，但是我们却可以刻意改成这样，从而极度明确地让人知道这个段落的主要内容。从另外一方面想，把段落组织起来，利用开头句作为索引，也是方便知识查找和索引的一种方式。语言也是一种艺术，你很难知道这些句子在别人脑子里能否和得到你形成一样的想法。就像艺术要追求美一样，我们要追求逻辑上的清晰，简洁易懂。
-
-另外，克服自己害怕的事情有一些通用的“技巧”。早上刚起床的时候做你最害怕，最不想做的事情。
-
-### 学习方法
-
-首先是英文写作。这两天正好在准备托福，有一道写作题，每次做完放到grammarly里检查语法错误。第一遍的时候很多语法错，有点沮丧。但是连续做了几遍这同一题之后，渐渐知道自己经常在哪些地方犯错，能够在检查的时候基本上错误没多少了。之后对英文写作就有信心多了，这一点对写paper也有帮助。
+- [Poe翻译机器人](https://poe.com/TranslatingChinese)：直接输入中文，内置提示词会让ChatGPT将内容直接翻译为英文。
 
 ## 总体思想
 
-- 写作要逻辑，讲求逻辑，文字是次要的。遇到自己写不出来的情况，首先问自己是不是逻辑问题，把自己的逻辑理清楚。
-- Reader Oriented：
-- Reproducible：重视实验结果的可复现性
+没有不能克服的困难。写paper看似很难，实际上是由一些没那么难的事情组合而成。
 
-写Abstract、Introduction可以留到最后。Abstract需要考虑让没有背景的人也能看懂。Introduction也不需要写得太细节，即使能很好地概况你的内容。写清楚是正文approach的事情。
+- Good paper = Good Research + Good Writing。一般过于忽视了好的写作的重要性。好的写作和好的Research同等重要。不需要注重词语，不建议写很长句子。
+  - Good Research: 
+    - Good Idea: 提出问题/解决问题？
+  - Good Writing 
+    - English: 大模型帮助很大，但是依然要注重提升英语水平。不要用太多复杂的词。
+      - 同时准备雅思/托福等英语考试。
+    - Good Logic:
+      - 总体结构上，都是形成了模式的。就像填模板一样，不需要要有格式上的创新。
+      - 宏观是逻辑是一条线下来，微观上段落都是总分的结构。
+      - 多找其他人看一看自己写的好不好。
+    - Reader Oriented:
+    - Correct and Succinct: 
+    - Clear with Good Logic: 把自己的逻辑先列出来，然后再理清楚。
+    - Reproducible: 重视实验结果的可复现性。写作上指写出来的东西是可复现的，要把关键的点写出来。
 
-如何写得更清晰：
-1. 从读者熟悉的概念入手。如果要指代同一个东西，尽量用读者熟悉的那个词指代。
-2. Abstract，Introduction以及Motivating Examples中，有可能写得太细节，导致读者看不懂。让其他人看看有哪些关键词太过细节，不需要那么详细说。
-3. 宏观是逻辑是一条线下来，微观上段落都是总分的结构。
+写Abstract、Introduction可以留到最后？Abstract需要考虑让没有背景的人也能看懂。Introduction也不需要写得太细节，即使能很好地概况你的内容。写清楚是正文approach的事情。
 
 ## 写paper
 
-### 摘要
+### Rebuttal & Revision
 
-摘要并不是为了准确地概况paper的方法。方法不用写太细节。包括the scope, purpose, main idea, results。摘要需要易懂，让更多人能看懂，此外，让看的人知道是不是他们想要找的paper。
+1. reviewer可能忘了自己之前说什么，最好不要有太多引用文章或者rebuttal的地方，而是复述一下。
+2. rebuttal的时候最好不要对其他没有提到意见的地方有太大修改。因为理论上应该在投paper之前，paper应当被打磨完毕。
 
-## Latex
+## Latex相关问题
 
 **ACM模板移除Copyright**
 
@@ -90,6 +85,8 @@ tags:
 
 [IEEE模板确实要求表的标题是Small Caps格式](https://tex.stackexchange.com/questions/166814/table-caption-in-uppercase-i-dont-know-why)的。但是，当你[引用了`\usepackage{subcaption}`之后会变成正常格式](https://tex.stackexchange.com/questions/387133/my-table-is-not-conforming-to-the-ieeetran-caption-table-format)。如果要提交到期刊，这是一个容易犯的错误。但是确实有很多paper的table的格式因为这个而不对。有一个[方法](https://tex.stackexchange.com/questions/154435/ieee-template-and-caption-false-option-for-subcaption-package)（[这里](https://liuzhiguang.wordpress.com/2018/01/05/get-ieeetran-to-work-with-the-subcaption-package/)也提到）可以绕过这个问题而正常使用subcaption包。
 
+- **在Caption中使用footnote**：[这里](https://tex.stackexchange.com/questions/10181/using-footnote-in-a-figures-caption)说需要先使用`\protect\footnotemark`生成脚标标记，然后在表后增加一个`\footnotetext{xxxx}`。此外，建议此时同时使用`\caption[short description]{long description}`的格式。有的论文会在结尾生成一个list of figures/tables目录，此时short description会被用到。
+
 ### 图表
 
 基础样式的表格：基于 https://www.tablesgenerator.com/ 生成，选择Booktabs table style，仅选择三个横线（表顶部底部和表头）和内部竖线。
@@ -97,7 +94,7 @@ tags:
 - 图表说明是否需要句号？
 - 引用图表时使用波浪线：`Fig.~\ref{fig:xxx}`。波浪线代表不换行空格。
 - 引用Section的时候用`\S`替代，例如`\S \ref{sssec:xxx}`
-- 标号可以用`\pin`
+- 标号可以用[带圆圈的数字](https://tex.stackexchange.com/questions/7032/good-way-to-make-textcircled-numbers)。
 
 **节约空间**
 
@@ -146,6 +143,12 @@ al. [7]
 最直接的想法当然是，针对review提出的问题，直接列表一个个回答便是。但是，review经常会，完全不记得问题的上下文。因此这种方式容易导致review想不起来之前的问题。因此要注意重新介绍一下相关的上下文。
 
 ## 其他
+
+先写中文是有帮助的。能够清楚地知道自己往往遇到的是逻辑问题，而不是英语表达能力的问题。速度就是质量，真正好的文章是改出来的，如果不能以很快的速度进行这个过程，那么就很可能不能在自己可接受的时间范围内写出“还看得过去”的paper内容，自己也会非常折磨。可以在文档中自己分两栏，比如用个两列的列表，左边放中文，右边放英文。每次同时修改两边内容。
+
+在分离了语言这个困难后，其次是讲求逻辑，有明确的逻辑关系。优先看自己是不是完全写清楚了，其次是考虑篇幅等其他问题。往往会发现越写越多，然后超出内容，然后开始精简，这也是写paper的必经之路。后面再删，删的时候优先选择必要的逻辑，次要的注释掉。
+
+最后，需要注意，语言是一种艺术。必须要让自己的语言能够以最简单的方式被看懂。首先，任何逻辑上复杂的弯都最好理顺，①进一步增加自己paper的受众，让更多人能看懂，②很有可能reviewer在看你paper的时候很累，思维也并不是很清晰。其次，为了段落结构的清晰，可以通过调整句子，让自己每个段落想表达什么都明确出来。比如，介绍自己paper主要思想时，我们往往并不会写：“The main idea of our paper is that xxxx.”，但是我们却可以刻意改成这样，从而极度明确地让人知道这个段落的主要内容。从另外一方面想，把段落组织起来，利用开头句作为索引，也是方便知识查找和索引的一种方式。语言也是一种艺术，你很难知道这些句子在别人脑子里能否和得到你形成一样的想法。就像艺术要追求美一样，我们要追求逻辑上的清晰，简洁易懂。
 
 2024年1月24日 
 - 表格的`\extracolsep`填满整个页，会导致边框有gap，rotate之后不对齐到中间。

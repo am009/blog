@@ -7,7 +7,7 @@ tags:
 - Networking
 ---
 
-TLDR：如何使用GRE Tap隧道不会遇到MTU问题？使用IPv4连接，同时关闭GRE接口配置中的“设置Don't Fragment”选项
+TLDR：如何使用GRE Tap隧道不会遇到MTU问题？使用IPv4连接（gretap4），同时（在第一次创建接口时！！）关闭GRE接口配置中的“设置Don't Fragment”选项。
 
 <!-- more -->
 

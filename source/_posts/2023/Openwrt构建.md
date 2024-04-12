@@ -17,8 +17,13 @@ Openwrt构建
 
 - 跟着[install-buildsystem](https://openwrt.org/docs/guide-developer/toolchain/install-buildsystem)安装一堆包
 - 跟着[use-buildsystem](https://openwrt.org/docs/guide-developer/toolchain/use-buildsystem)克隆源码
-- 跟着[using_official_build_config](https://openwrt.org/docs/guide-developer/toolchain/use-buildsystem#using_official_build_config)构建一个路由器能用的镜像。我手头的路由器是AX6S，ROM的下载链接是：`http://downloads.openwrt.org/releases/23.05.0/targets/mediatek/mt7622/openwrt-23.05.0-mediatek-mt7622-xiaomi_redmi-router-ax6s-squashfs-factory.bin`，所以我就执行：`wget https://mirror-01.infra.openwrt.org/releases/23.05.0/targets/mediatek/mt7622/config.buildinfo -O .config` 和 `wget https://mirror-01.infra.openwrt.org/releases/23.05.0/targets/mediatek/mt7622/feeds.buildinfo -O feeds.conf`
+- 跟着[using_official_build_config](https://openwrt.org/docs/guide-developer/toolchain/use-buildsystem#using_official_build_config)构建一个路由器能用的镜像。下载config.buildinfo文件到.config。
+  - 我手头的路由器是AX6S，ROM的下载链接是：`http://downloads.openwrt.org/releases/23.05.0/targets/mediatek/mt7622/openwrt-23.05.0-mediatek-mt7622-xiaomi_redmi-router-ax6s-squashfs-factory.bin`，所以我就执行：`wget https://mirror-01.infra.openwrt.org/releases/23.05.0/targets/mediatek/mt7622/config.buildinfo -O .config` 和 `wget https://mirror-01.infra.openwrt.org/releases/23.05.0/targets/mediatek/mt7622/feeds.buildinfo -O feeds.conf`
 - 构建GRE、netifd包：`make package/network/config/netifd/compile V=s` （加上了`V=s`可以看到使用的相关命令）
+
+**重新构建一切**
+
+`make dirclean defconfig download clean world`
 
 ### 包编译的细节
 
@@ -36,3 +41,9 @@ Openwrt构建
 
 - [Submitting patches](https://openwrt.org/submitting-patches)页面，提到了核心包可以通过Github PR或者邮件列表提交。
 - [这个Patch](https://lists.openwrt.org/pipermail/openwrt-devel/2024-January/041977.html)先出现在邮件列表，然后[commit](https://git.openwrt.org/?p=project/netifd.git;a=commit;h=4219e99eeec7514657f5838eb4b4b5eb28ee1271)才出现在netifd的列表里，说明他们还是在用mailing list的，可以考虑直接写patch交patch。
+
+### 给包增加Patch
+
+https://openwrt.org/docs/guide-developer/toolchain/use-patches-with-buildsystem
+
+quilt import https://github.com/am009/mosdns/commit/4f90490dc7c56c94880f09b5bf2542ac65d97530.patch
