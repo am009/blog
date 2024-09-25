@@ -15,6 +15,8 @@ tags:
 
 {% pdf /2024.assets/NativeSummary__ISSTA_24__Camera_Ready.pdf %}
 
+{% pdf /2024.assets/Presentation-NativeSummary.pdf %}
+
 这是论文之前的“手稿”。感兴趣的话只需要看上面的论文即可。
 
 <!-- 因为用来翻译，所以一些英式中文是故意的。 -->
