@@ -13,6 +13,27 @@ tags:
 
 <!-- more -->
 
+## TL;DR
+
+1. Interfaces » WAN6 » DHCP server » IPv6 Settings里，勾选Designated Master，RA 设置relay，DHCPv6 禁用，NDP proxy设置relay。**勾选learn routes。**
+2. Interfaces » LAN » DHCP server » IPv6 Settings里，不能勾选Designated Master，RA 设置relay，DHCPv6 禁用，NDP proxy设置relay。**勾选learn routes。**
+3. 注意wan的IPv6 Settings就别动了，全禁用。wan和wan6一起设置relay会导致RA通过wan转发到外面去。
+
+然后使用 [ns_dup](https://github.com/EarthCompass/ns_dup) 这个小工具。用openwrt的procd挂着
+
+```
+#!/bin/sh /etc/rc.common
+USE_PROCD=1
+START=99
+
+start_service() {
+        procd_open_instance
+        procd_set_param command /bin/ash -c "/root/ns_dup eth3.2109 br-lan > /dev/null"
+        procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} 0
+        procd_close_instance
+}
+```
+
 ### 问题描述
 
 #### 锐捷校园网认证
