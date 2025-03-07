@@ -292,7 +292,7 @@ $$
       - 作为一个有限状态自动机，这里只对Q状态增加边，每两个状态之间最多 $|\Gamma|$ 个规则。
   - 算法：如果有一个规则 $pA \rightarrow qw$ ，同时现在的P-自动机存在一个路径 $q \overset{w}{\underset{\mathcal{A}_{i}}{\Longrightarrow}} s$ 我们给P-自动机增加一个新的转换规则 $p \xrightarrow[]{A} s$
 
-    ![saturaion](imgs/saturation.drawio.png)
+    ![saturaion](saturation.drawio.png)
 
     `p Au -> q wu`。原有自动机为黑色部分，u代表未知任意字符串，即代表的是路径，内部省略了具体的其他节点。意味着从状态为q栈为空的状态，能够接受一个字符串wu。
 
@@ -341,7 +341,7 @@ $$
     - 就像下面对比图先走橙色边再走蓝色边一样。
 - 对比自动机和transducer
 
-  ![对比自动机和transducer](imgs/saturation3.drawio.png)
+  ![对比自动机和transducer](saturation3.drawio.png)
 
   注意到几点：1. Transducer的边可以看作双向的，如果有个pop过去的边，则也可以push回去。而且这里pop边和P-自动机的边对应。2. 从非确定性自动机NFA角度看，transducer 1 和transducer 2是等价的。3. 这里可以看到，transducer的状态可以和PDS配置是一个一对多的关系。
 
@@ -638,7 +638,7 @@ Retypd 的核心饱和算法在子类型约束的数量上是三次方的；由�
    3. 同时考虑S-Pointer规则：如果有一个 $(.store, z) \in R(x)$，想象边从 z 到 x，上面标记push store。此时找到x的逆 variance 节点 $x^-$，然后给 $R(x^-)$ 增加 $(.load, z)$
       1. 直接应用： $(.load,\;x.store) \in R(\overline{x})$ 不是最典型的例子。往往会结合之前新增的子类型边。
       2. 可以想象 $x$ 到 $x^-$ 额外增加了pop store和push load边。
-         ![](imgs/s-ptr-example.drawio.png)
+         ![](s-ptr-example.drawio.png)
       3. 应用时最好 $\overline{x}$ 也存在在图上。
 
 实际实现时，saturation算法被包含在Transducer的构建中。Transducer的构建在两个地方发挥作用：
@@ -705,7 +705,7 @@ sketch 和约束的对应关系很好。任何约束集合都能被一个sketch�
 
 具体sketch上每个节点标什么lattice元素，借助了前面的transducer。关注所有的类型常量，然后看这个类型常量和哪些dtv有子类型关系，有则更新对应的lattice标记。根据子类型或父类型，取交或者并。
 
-![sketch-lattice-annotation](imgs/sketch-lattice-annotation.png)
+![sketch-lattice-annotation](sketch-lattice-annotation.png)
 
 ### Tarjan Path Expression
 
@@ -917,7 +917,7 @@ Theorem 4. Let $P(u, w)$ for $u, w \in V$ be the path expressions computed by EL
 - **语句1**：对于 x = &O1，对应 `O1 <= x.load`  和  `x.store <= O1` 我们把指向关系定义为这两个关系的组合。
 - **语句2**：对于 y = x (x <= y)，在retypd下有如下图结构：
 
-![assignment constraint graph](imgs/assignment-retypd.drawio.png)
+![assignment constraint graph](assignment-retypd.drawio.png)
 
 在指针分析中有如下约束： pts(x) $\subseteq$ pts(y) 我们尝试证明：
 
@@ -929,7 +929,7 @@ Theorem 4. Let $P(u, w)$ for $u, w \in V$ be the path expressions computed by EL
 
 则我们可以证明，retypd是一种基于anderson指针分析的类型推断算法。
 
-![Pointer analysis constraints](imgs/Anderson-pointer-algo.png)
+![Pointer analysis constraints](Anderson-pointer-algo.png)
 
 **语句3**：对于a = *b，有  b.load <= a
 
