@@ -34,6 +34,14 @@ start_service() {
 }
 ```
 
+#### 有人乱发RA怎么办
+
+由于学校网关设备没有启动RA抑制，导致其他人的配置错误会导致IPv6出现问题。可以通过防火墙，仅允许学校网关的RA包进入。以OpenWRT配置为例：
+
+- 获取网关MAC地址：WireShark抓包，随便找个包，`80:05:88`开头的MAC就是锐捷设备，或者先用icmpv6过滤找Router Advertisement包。
+- 默认不允许RA包进入：找到 网络 - 防火墙 - Traffic Rules 里面的自带规则：`Allow-ICMPv6-Input`，然后 修改 - 高级设置 - Match ICMP Type里面取消勾选 router-advertisement。保存
+- 允许网关设备的ICMPv6：增加一条规则，比如名为允许网关Input。`Incoming IPv6 - protocol ICMP - From wan - MAC xx:xx:xx:xx:xx:xx To this device`。这里填写上面找到的正确的网关地址。
+
 ### 问题描述
 
 #### 锐捷校园网认证

@@ -631,7 +631,7 @@ Retypd 的核心饱和算法在子类型约束的数量上是三次方的；由�
    1. 规则左边存在的变量，标记pop边，右边的变量标记push边。
    2. 状态标记代表剩余的可读字符串，所以push之后反而变少，pop反而变多。
 2. 运行Saturation算法，
-   1. 维护Reaching Set集合 $R(x)$
+   1. 维护Reaching Push Set集合 $R(x)$
       1. 初始的时候，遍历所有边，如果存在一个 `push l` 的边从 x 到 y 的边，则 $R(y) \leftarrow R(y) \cup {(l,x)}$ 从 x 节点 push l 可以来到 y 。即，只关注push边。
       2. 循环开始时，假如有子类型关系边 $(x, y, 1)$ ，则 $R(y) \leftarrow R(y) \cup R(x)$ 父类型更新子类型的可达关系。
    2. （循环内）Saturation规则：将 `push α -> 1 -> pop a` 这种边序列增加shortcut边。即，如果存在边 $(x, y, pop\;l)$ 且 x 的到达集合 $R(x)$ 内有一个对应标签的到达关系 $(l,z)$ 则给增加子类型关系边 $(z, y, 1)$。
