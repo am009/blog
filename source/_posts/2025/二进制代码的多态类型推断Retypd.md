@@ -1030,3 +1030,28 @@ Theorem 4. Let $P(u, w)$ for $u, w \in V$ be the path expressions computed by EL
 答：应该是相同的。retypd的等价图构建后就等价是Steensgaard的存储关系图。
 
 但是在跨函数分析框架下，这些具体分析都是一样地需要专门看待。。
+
+
+**为什么Retypd要有自顶向下分析？**
+
+在初始自底向上（bottom-up）阶段后，自顶向下收集函数的调用者传入的所有类型，并生成最具体类型重新作为参数类型传播到函数中。
+
+```c
+struct linkedBuf {
+  char buf[50]; struct linkedBuf* next;
+};
+struct linkedBuf* 
+getEnd(struct linkedBuf* L) {
+  while(L->next) { L = L->next; } return L;
+}
+void printBuf(struct linkedBuf* L) {
+  puts(L->buf);
+}
+int main() {
+  struct linkedBuf B1 = {};
+  struct linkedBuf *E = getEnd(&B1);
+  printBuf(E); return 0;
+}
+```
+
+printBuf函数，参数可以理解为`linkedBuf*`，也可以理解为`char*`。`char*`是更通用的，`linkedBuf*`是更具体的。如果所有的caller调用printBuf的时候传的都是`linkedBuf*`，那么参数可以是它，但是只要有任何caller传了`char*`，类型就只能是`char*`了。top_down再来一遍，就是从caller到callee，可以分析每个函数被调用的时候传的参数的情况，比如上面例子里的，是不是没有人传`char*`

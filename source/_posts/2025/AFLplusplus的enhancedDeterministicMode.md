@@ -1,11 +1,10 @@
 ---
-title: LLVM的SROA解析
-date: 2025/04/02 11:11:12
+title: AFLplusplus的enhancedDeterministicMode
+date: 2025/04/03 11:11:12
 categories:
 - Dev
 tags:
-- LLVM
-- Compiler
+- Fuzz
 ---
 
 AFL++的[Enhanced Deterministic mode](https://github.com/AFLplusplus/AFLplusplus/pull/1972)的实现解析
