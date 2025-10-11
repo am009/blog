@@ -24,6 +24,129 @@ tags:
 - 优先看[这个介绍](https://github.com/GrammaTech/retypd/blob/master/reference/type-recovery.rst)。
 - 这个[PPT](https://github.com/GrammaTech/retypd/blob/master/reference/presentation_slides.pdf)比论文容易懂很多
 
+## Q&A
+
+### 为什么Retypd要有自顶向下分析？
+
+在初始自底向上（bottom-up）阶段后，自顶向下收集函数的调用者传入的所有类型，并生成最具体类型重新作为参数类型传播到函数中。
+
+```c
+struct linkedBuf {
+  char buf[50]; struct linkedBuf* next;
+};
+struct linkedBuf* 
+getEnd(struct linkedBuf* L) {
+  while(L->next) { L = L->next; } return L;
+}
+void printBuf(struct linkedBuf* L) {
+  puts(L->buf);
+}
+int main() {
+  struct linkedBuf B1 = {};
+  struct linkedBuf *E = getEnd(&B1);
+  printBuf(E); return 0;
+}
+```
+
+printBuf函数，参数可以理解为`linkedBuf*`，也可以理解为`char*`。`char*`是更通用的，`linkedBuf*`是更具体的。如果所有的caller调用printBuf的时候传的都是`linkedBuf*`，那么参数可以是它，但是只要有任何caller传了`char*`，类型就只能是`char*`了。top_down再来一遍，就是从caller到callee，可以分析每个函数被调用的时候传的参数的情况，比如上面例子里的，是不是没有人传`char*`
+
+
+### 区分不同指针之间的类型（区分load和store类型）
+
+```cpp
+  爷爷 *q;
+  曾孙 *p;
+
+  q = p;
+
+  爸爸 x;
+  孙子 y;
+
+  *q = x;
+  y = *p;
+```
+
+子类型关系： 曾孙->孙子->儿子->爸爸->爷爷。子类型指向父类型。
+
+问题：类型推理是可以推理出x <= y的。但是这里x的类型是爸爸，y的类型是孙子，明显出现了矛盾。问题出在哪里呢？
+
+其实就是C++类型系统的问题，C++允许构造出这种情况，把不合法的类型操作弄成了合法的，说明它的类型系统捕捉不到这种不合法的赋值。（但是至少没有把合法的东西弄成不合法的，不然就影响正常编程了）。
+
+意思是，如果是用retypd作为C++的类型系统（即C++也区分load和store类型），那么在这三句话就已经报错了：
+
+```
+  爷爷 *q;
+  曾孙 *p;
+
+  q = p;
+```
+
+如果把爷爷和曾孙类型换过来，肯定也是有问题的。（难道说retypd只允许完全相等的指针类型才能赋值吗？也不是，这个后面在解释）我们先说明为什么会报错。
+
+我们这样看，首先假设有一个赋值语句`q = p`。首先可以证明，如果只是简单用`某个类型*`表示的话，一定会有矛盾。其次，retypd提出了一种全新的子类型方式，使得`*p`和`*q`之间不一定是谁是谁的子类型，而是根据用作load还是用作store，给出这样的两个关系：`q.store -> p.store`  `p.load -> q.load`。
+
+**不区分load/store一定有矛盾**：假设q的类型是`Q*`，p的类型是`P*`。那么可以证明，无论Q是P的子类型（协变），还是P是Q的子类型（逆变），都会产生矛盾。
+
+- 情况1：P是Q的子类型，我们这里假设，Q是爷爷类型，P是曾孙类型。此时。下面的程序使得爸爸类型被赋值给了孙子类型，所以有矛盾。
+  ```cpp
+    爷爷 *q;
+    孙子 *p;
+
+    q = p;
+
+    爸爸 x;
+    孙子 y;
+
+    // 往父类指针里面存一个中间类。
+    *q = x;
+    // 然后用子类指针取出来，赋值给子类。
+    y = *p;
+    // 最终爸爸类型被赋值给了孙子类型。出现类型问题。
+  ```
+
+- 情况2：Q是P的子类型。
+  ```cpp
+  孙子* q;
+  爷爷* p;
+
+  q = p; // 这里父类指针赋值给了子类指针，明显有问题？
+
+  // 直接往p里存父类，然后从q取出来
+  爸爸 x;
+  孙子 y;
+  *p = x;
+  y = *q
+
+  ```
+
+那么retypd到底允许什么类型之间可以有赋值关系呢？
+
+**retypd怎么解决的** 可以复习一下函数的子类型关系。结合一下函数的子类型关系，以及getter/setter模式，就可以得到retypd下的指针类型的子类型要求。
+
+**函数的子类型关系** 这里其实就是PL领域里常规的要求了，在网上其他的PL基础知识介绍里面说不定有更容易懂的例子。函数的子类型定义是说，如果在调用A函数的时候，我一定能用B函数替换，那么B函数更厉害，所以B函数是子类型。
+
+首先从类比的角度，把函数比作干活的人。有两个工人，工人A一定要钻石镐才能干活，工人B只要有镐子就能干活。这里B能替代A，所以B是A的子类型。这里钻石镐是镐子的一个子集，所以钻石镐是镐子的一个子类型。总结：其他不变的条件下。函数的参数向父类型转变（对参数要求没那么高了），那么函数自身向子类型方向转变。参数变成父类型，函数反而变成子类型，这种反向关系称为逆变。然后我们看返回值。假设还是有两个工人，当前的工作要求是，挖出价值大于20的矿。工人A恰好满足条件。工人B会挖出价值大于10的矿。工人C只会挖出价值大于30的矿。这里明显工人C可以替代工人A，而工人B则无法满足要求。由于价值大于30的矿是价值大于20的矿的子类型，所以我们这里返回值向子类型方向转变之后，变成的新函数可以替代原来的函数。这里返回值变成子类型，函数也变成子类型，转换方向相同，称为协变。
+
+我们沿用之前`q = p`的例子，但是这一次把它看作一个有getter和setter函数的类。
+
+那么retypd就不会和C++一样，给一个单一的xx*这样的指针类型了，而是会分为load和store类型，这里用getter和setter表示。对于赋值语句`q = p`，retypd给出了这样的要求：`q.store -> p.store`（q的setter参数类型是p的setter参数类型的子类型）  `p.load -> q.load`（p的getter返回值类型是q的getter返回值类型的子类型）。我们先构造出一个满足这个要求的类型，然后拿上面那两个例子来看看会不会出错。
+
+```cpp
+  class p { 爸爸 get(); void set(孙子); }
+  class q { 爷爷 get(); void set(曾孙); }
+
+  // 赋值语句来自前提条件
+  q = p;
+
+  // 首先我们尝试往父类型q里面存一个中间类。然后从子类里面取出来？
+  q.set(孙子) // 类型错误了，不能设置
+```
+
+
+最后回顾一下，这个C++它指针只有一种类型。然后retypd里面它的指针存和取是不同的类型。就比如说这里，指针 q 的存和取是两个不同的类型的时候，如果C++也想模仿，但是给p和q只能各写一个类型出来，写哪个好像都会造成问题。既不能说Q是P的子类型，也不能说P是Q的子类型。
+
+
+
 ## 开发与使用
 
 如何使用当前开源的代码呢？代码是一个python模块。当前开源的两个相关的使用代码有：[retypd-ghidra-plugin](https://github.com/GrammaTech/retypd-ghidra-plugin)和[gtirb-ddisasm-retypd](https://github.com/GrammaTech/gtirb-ddisasm-retypd)。
@@ -1031,27 +1154,3 @@ Theorem 4. Let $P(u, w)$ for $u, w \in V$ be the path expressions computed by EL
 
 但是在跨函数分析框架下，这些具体分析都是一样地需要专门看待。。
 
-
-**为什么Retypd要有自顶向下分析？**
-
-在初始自底向上（bottom-up）阶段后，自顶向下收集函数的调用者传入的所有类型，并生成最具体类型重新作为参数类型传播到函数中。
-
-```c
-struct linkedBuf {
-  char buf[50]; struct linkedBuf* next;
-};
-struct linkedBuf* 
-getEnd(struct linkedBuf* L) {
-  while(L->next) { L = L->next; } return L;
-}
-void printBuf(struct linkedBuf* L) {
-  puts(L->buf);
-}
-int main() {
-  struct linkedBuf B1 = {};
-  struct linkedBuf *E = getEnd(&B1);
-  printBuf(E); return 0;
-}
-```
-
-printBuf函数，参数可以理解为`linkedBuf*`，也可以理解为`char*`。`char*`是更通用的，`linkedBuf*`是更具体的。如果所有的caller调用printBuf的时候传的都是`linkedBuf*`，那么参数可以是它，但是只要有任何caller传了`char*`，类型就只能是`char*`了。top_down再来一遍，就是从caller到callee，可以分析每个函数被调用的时候传的参数的情况，比如上面例子里的，是不是没有人传`char*`
