@@ -47,7 +47,136 @@ SimpleSub 和 MLsub是编程语言理论（PL）中的类型推理方向的，�
 
 传统的 Hindley-Milner 类型推断是基于Unification算法的过程，该过程通过不断地强迫两个未知类型相等，直到达到矛盾或所有程序约束满足为止。在MLsub中，Dolan 提出了一个叫做biunification的过程。biunification的一个关键部分是极性类型系统。极性意味着类型被分为两种类型，传统上称为正类型（+）和负类型（-）。[这个](https://blog.polybdenum.com/2020/07/11/subtype-inference-by-example-part-2-parsing-and-biunification.html)里面说的很好，为了使理解更加容易，我称之为值类型（+）和用法类型（-）。为了避免导致半统一不可判定的无限循环，biunification将所有子类型约束限制为 v <= u 的形式，其中 v 是值类型，u 是用法类型。这些约束可以自然地解释为要求程序值与其使用方式相兼容。
 
-**类型变量**：基本原则是，为每个表达式创建一个值类型（+），为每个表达式操作数创建一个用法类型（-），并在每个值类型（+）与其使用上下文（-）之间建立子类型约束，以确保一致性。我们将这些约束 v+ <= u- 称为值流向其使用，它们是通过 TypeCheckerCore 中的 flow 方法创建的。
+**类型变量**：基本原则是，为每个表达式创建一个值类型（+，也称为正极性），为每个表达式操作数创建一个用法类型（-，也称为负极性），并在每个值类型（+）与其使用上下文（-）之间建立子类型约束，以确保一致性。我们将这些约束 v+ <= u- 称为值流向其使用，它们是通过 TypeCheckerCore 中的 flow 方法创建的。
 
 还有一个更复杂的方面——变量。变量由一对类型表示——值类型（+）和用法类型（-）。从概念上讲，值类型表示从变量读取的类型（），而用法类型表示分配给该变量的类型。自然，我们需要约束 v- <= v+，即对变量的每一次写入与对该变量的每一次读取都是兼容的。然而，这种类型的约束我们使用数据流边直接表示。它确保流关系的传递性。对于每个变量 (v1, u1)，以及每个流向 u1 的值类型 v2 和 v1 流向的每个用法类型 u2，我们添加约束 v2 流向 u2。本质上，变量（一对连接了数据流边的类型节点）在类型图中像小隧道或虫洞一样运作。无论从一端进入的是什么，都会从数据流另一端出来。直接把下界/上界类型约束沿着数据流边传递。
+
+**位置约束** 类型构成一种格（Lattice），我们有两种类型运算
+
+- 并类型（ $\sqcup$ （Join），求两个类型的最小上界 least upper bound）
+- 交类型 （ $\sqcap$ （Meet），求两个类型的最大下界 greatest lower bound）
+
+我们要求交类型运算 $\sqcap$ 只出现在负极性处，并类型运算 $\sqcup$ 只出现在正极性处。
+
+例如，下面的类型是不合法的：（例子取自MLsub论文的 5.2.3 节）
+
+$$
+\{\text{awake} : \text{bool}\} \sqcap α \rightarrow \{\text{awake} : \text{bool}\} \sqcap α
+$$
+
+因为在返回值（正极性）的地方出现了交类型运算 $\sqcap$ ，但是我们有
+
+$$
+\{\text{awake} : \text{bool}\} \sqcap α \rightarrow α \;\;\; \leq \;\;\; \{\text{awake} : \text{bool}\} \sqcap α \rightarrow \{\text{awake} : \text{bool}\} \sqcap α
+$$
+
+因此就直接会采取左边的表示方式。
+
+### SimpleSub的三种简化方式
+
+这里我们进一步分析SimpleSub论文第4.3章里面提到的简化算法。
+
+作为背景，我们回忆类型变量是干什么用的。类型变量通常给**多态**函数使用，对应的是数据流边。如果就是普通的类型的话，是不会有类型变量的。
+
+- 不是多态的函数，参数和返回值类型都是确定的，即使函数接受一个复杂的结构体类型，返回另外一个复杂的结构体类型，里面也不会出现变量。
+- 多态函数的典型例子，比如id函数 $\lambda x.x$ ，把参数原样返回，如果传入一个整数，返回的是整数类型，传入的是字符串，返回的是字符串类型。那么我们就不能简单给参数和返回值标记成具体的类型，标记为 $int \rightarrow int$ 或者 $str \rightarrow str$ 都是错的。因此，我们引入类型变量 $\alpha$ 表示参数x的类型，将它的类型标记为 $\alpha \rightarrow \alpha$ 。表示，假如参数给定的类型是 $\alpha$ 时，返回值的类型也是 $\alpha$ 。
+- 类型推理的最后，类型变量表示的纯粹的未知类型，不会有约束，因为约束会通过替换操作表示到外面。
+    - 比如说同样是id函数 $\lambda x.x$ ，但是我在函数体里面访问了一下成员field1并当做int类型使用，但是最后还是返回x。此时，在类型推理时会生成约束 $\alpha \leq \{f1: int\}$ （其中 $\alpha$ 表示x的类型），它通过约束x是某个有f1成员的结构体类型，来约束x必须有这个成员。
+    - 既然说，$\alpha$ 表示x的类型了，那么，既然函数还是返回x，那么整个函数的类型依然还是 $\alpha \rightarrow \alpha$ ？这个说法是错误的。因为类型推理解决这个约束的时候会产生一个替换， $\alpha^- \rightarrow \alpha^- \sqcap \{f1: int\}$ 最终推理出来的类型是 $\alpha \sqcap \{f1: int\} \rightarrow \alpha$。这代表什么含义呢？这意味着**类型变量如果有约束，总是会通过交类型或者并类型把约束单独表示，从而抽出身来变成没有约束的纯粹变量** （参考MLsub论文《Algebraic Subtyping》的5.2.3节后半部分，这里涉及了一个细节，即类型使用产生的上界约束仅影响变量的负极性（上界）的使用点）
+
+
+**简化1：去除极性变量** 因为变量仅仅在正极性，或者负极性出现，则我们可以删掉它。因为变量表示的就只是参数到返回值之间的多态类型关系。这种仅在一个方面出现的变量无法表示数据流，因此可以去掉。比如对于类型 $\alpha \sqcap \text{int} \rightarrow \text{int} \sqcup \beta$ ，直接简化成 $\text{int} \rightarrow \text{int}$ 。（TODO 怎么理解）
+
+
+**简化2：共现分析**：如果两个变量总是在相同极性位置同时出现，则我们可以将它们合并。这里同时出现的意思是，把类型中，用 $\sqcap$ 或 $\sqcup$ 连接的部分看作一个槽位，里面可以同时存在被连接的多个变量。然后依次看正极性的所有槽位，和负极性的所有槽位，如果两个变量总是同时出现在某个槽位，则说明可以合并。
+
+从最简单的角度理解，既然变量就已经抽身成单独的纯粹变量，那么多个变量其实就没有意义了。例如，比如说对于id函数 $\lambda x.x$ 它的类型是。 如果类型推理给出类型是 $ \alpha \sqcap \beta \rightarrow \alpha \sqcup \beta$ 这也是对的，可以化简成前面的类型。
+
+但是，这里有一个坑点，**两个极性下，任意一个极性下共现即可进行合并，即使另外一个极性不共现**。例如，我们看论文里3.4章结尾提到的twice函数 twice = $\lambda f. \lambda x. f(f x)$ 。初步得到的类型是 $\alpha \sqcap (\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta) \rightarrow \beta \rightarrow \delta$ 接下来需要化简它。首先根据“简化1”去除只出现一次的 $\alpha$ 变量，都只出现一次肯定只在一个极性出现。得到 $(\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta) \rightarrow \beta \rightarrow \delta$ 。它是一个函数类型，第一个参数也是函数类型 $(\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta)$ 第二个参数是 $\beta$ 返回值类型是 $\delta$ 。
+
+首先我们需要区分极性。参数是负极性的，但是如果负极性的参数位置内部又是函数类型，里面的极性又要反过来。我们通过下划线标注负极性的位置，如下： $(\beta \sqcup \gamma \rightarrow \underline{\gamma \sqcap \delta}) \rightarrow \underline{\beta} \rightarrow \delta$ 。然后，我们不用区分 $\sqcap$ 和 $\sqcup$ 两个运算了，可以当做简单的集合连接符。比如表示成 $(\{\beta, \gamma\} \rightarrow \underline{\{\gamma, \delta\}}) \rightarrow \underline{\beta} \rightarrow \delta$ 总之就是四个槽位，然后每个位置可以有多个变量。
+
+**标准解法**：我们每次只看一个极性，看带下划线的负极性，此时， $\beta$ 单独出现， $\gamma$ 和 $\delta$ 一起出现。因此 $\gamma$ 和 $\delta$ 可以合并。比如我们都合并成 $\gamma$ ，把所有的 $\delta$ 替换成 $\gamma$ 即可。得到 $(\beta \sqcup \gamma \rightarrow \gamma) \rightarrow \beta \rightarrow \gamma$。
+
+论文的原文如下，和论文一样：
+
+> this type can be compacted to α ⊓ (β ⊔ γ → γ ⊓ δ) → β → δ,  and then simplified to (β ⊔ γ → γ) → β → γ, since α occurs only negatively (thus can be removed)  and δ and γ co-occur negatively (thus can be merged into a single variable).
+
+我们再看能不能进一步化简，这里 $(\beta \sqcup \gamma \rightarrow \underline{\gamma}) \rightarrow \underline{\beta} \rightarrow \gamma$ 看带下划线的负极性，两个变量单独出现，因此不能化简。看正极性，虽然 $\beta \sqcup \gamma$ 这里两个变量同时出现，但是 $\gamma$ 也会单独出现，所以不算是一直同时出现。
+
+**标准解法2**：如果我们先看正极性，可以发现其实也可以把 $\beta$ 和 $\gamma$ 合并，此时得到的类型是： $(\beta \rightarrow \beta \sqcap \delta) \rightarrow \beta \rightarrow \delta$ 这个简化方式也是正确的。
+
+**共现分析：基于数据流的深入理解**
+
+从数据流的角度，回忆MLsub论文，变量的本质就是连接数据流，只要数据流的边一致，类型就是一致的。如果某个变量在负极性槽位出现，然后又在正极性槽位出现，则我们认为存在一个从负极性槽位到正极性槽位的数据流。
+
+比如，对于 $(\{\beta, \gamma\} \rightarrow \underline{\{\gamma, \delta\}}) \rightarrow \underline{\beta} \rightarrow \delta$ 这里四个槽位标记为1到4，我们观察，对于下划线位置的变量，还在什么没有下划线的位置出现，得到下面的数据流
+
+1. 槽位2 -> 槽位1 ( $\gamma$ )
+1. 槽位2 -> 槽位4 ( $\gamma$ )
+1. 槽位3 -> 槽位1 ( $\beta$ )
+
+用同样的方式，给简化后的两种类型连接起来看看，得到下面的图：
+
+![](ML数据流示例.drawio.png)
+
+可以看到数据流完全一样！所以确实类型是一样的。
+
+**基于子类型定义的证明**
+
+我们尝试基于定义，证明两个解法的类型是一致的。即尝试证明 $(\beta \sqcup \gamma \rightarrow \gamma) \rightarrow \beta \rightarrow \gamma$ 等价于 $(\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta) \rightarrow \beta \rightarrow \delta$ 。我们通过证明两个类型互为对方的子类型，来证明类型等价。
+
+首先回忆子类型的定义。MLsub中子类型的定义的，如果存在一个类型替换，使得类型A的变量在替换后，变成了类型B的子类型，则说明A是B的子类型。
+
+- 替换可以是变量替换为具体类型，比如说，类型 $\alpha \sqcap \text{int} \rightarrow \text{int} \sqcup \alpha$ 中，我们可以替换 $\alpha \rightarrow \text{int}$ 得到 $\text{int} \sqcap \text{int} \rightarrow \text{int} \sqcup \text{int}$ 等价于 $\text{int} \rightarrow \text{int}$ 。因此前者是后者的子类型。
+    - 注意到子类型关系也不仅仅局限于不带变量的具体类型，带变量的多态类型之间也可能存在子类型关系。即，无论变量怎么替换成具体类型，最终的实例之间依然保留子类型关系。
+- **替换也可以是变量替换为变量！或者其他新的带新变量的类型表达式**。比如我们尝试证明类型 $\alpha \rightarrow \alpha \rightarrow \alpha$ 等价于 $\alpha \rightarrow \beta \rightarrow \alpha \sqcup \beta$ （参考MLsub论文《Algebraic Subtyping》4.2.1节）
+    - 对于后者，我们使用替换 $\beta \rightarrow \alpha$ 得到前者，这很简单
+    - 对于前者，我们使用替换 $\alpha \rightarrow \beta \sqcup \gamma$ 得到 $\beta \sqcup \gamma \rightarrow \beta \sqcup \gamma \rightarrow \beta \sqcup \gamma$ 而它 $\leq \gamma \rightarrow \beta \rightarrow \beta \sqcup \gamma$ 然后我们再把 $\gamma$ 重命名为 $\alpha$ 就得到后者了。
+
+证明分两步：
+
+- 找一个替换，让 $(\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta) \rightarrow \beta \rightarrow \delta$ 变成 $(\beta \sqcup \gamma \rightarrow \gamma) \rightarrow \beta \rightarrow \gamma$
+    - TODO 好像有点难
+- 找一个替换，让 $(\beta \sqcup \gamma \rightarrow \gamma) \rightarrow \beta \rightarrow \gamma$ 变成 $(\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta) \rightarrow \beta \rightarrow \delta$
+    - TODO 好像有点难
+
+同理，也可以证明 $(\beta \rightarrow \beta \sqcap \delta) \rightarrow \beta \rightarrow \delta$ 也等价于 $(\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta) \rightarrow \beta \rightarrow \delta$
+
+**和常量的共现**：比如，变量 $\alpha$ 和 int 总是在负极性同时出现，同时也和int总是在正极性同时出现，则将这个变量替换为int类型。
+
+因为，变量 $\alpha$ 和 int 总是在负极性同时出现，则其实对应的是，之前存在约束 $\alpha \leq \text{int}$ 。同理，总是在正极性对应的是 $\text{int} \leq \alpha$ 两个合起来，不就说明 $\alpha$ 等价于int类型了。
+
+**代码中的简化：CompactType**：当我们遇到类型：`{x: A} ∧ {x: B; y: C}`的时候，我们可以进一步合并结构体类型，变成 `{x: A ∧ B; y: C}`。它会让后续的共现分析更准确
+
+**简化方法3：哈希合并（Hash Consing）**：这个方法是SimpleSub特有的，MLsub没有进行这一步。这个涉及递归类型。
+
+原文如下：
+
+> 考虑以下递归项：
+> 
+> $$ \text{let } f = \lambda x. \{ L = x ; R = f x \} \text{ in } f $$
+> 
+> 为这个项推断出的合并类型将是：
+> 
+> $$ \alpha \rightarrow \{ L : \alpha; R : \mu\beta. \{ L : \alpha; R : \beta \} \} $$
+> 
+> 注意，这里有一个冗余的外部结构体层。我们希望推断出：
+> 
+> $$ \alpha \rightarrow \mu\beta. \{ L : \alpha; R : \beta \} $$
+> 
+> 这可以通过在 `coalesceType` 函数中对正在合并的类型执行哈希合并来完成：我们可以记住正在合并的整个类型表达式，而不仅仅是哪个 *变量* 正在被合并；当我们遇到一个已经在合并中的类型表达式时，我们会在这个位置引入一个递归类型变量，从而去除像上述那样冗余的外层类型。MLsub 当前并不执行类似的简化，因此在像上述示例中，Simple-sub 推导出更简单的类型。
+
+简单来说，就是在遇到递归类型的时候，可以多向外匹配一层，消除一层冗余。
+
+首先我们复习递归类型：比如说有类型 $\mu\beta. \{ L : \alpha; R : \beta \}$ 这里的 $\mu$ 是不动点算子。其中 $\beta$ 等于这个类型，同时 $\{ L : \alpha; R : \beta \}$ 也等于这个类型。总之我们得到等价关系 $\beta = \{ L : \alpha; R : \beta \}$ 这意味着我们可以不断展开：
+
+- $\beta$
+- $\{ L : \alpha; R : \beta \}$
+- $\{ L : \alpha; R : \{ L : \alpha; R : \beta \} \}$
+- $\{ L : \alpha; R : \{ L : \alpha; R : \{ L : \alpha; R : \beta \} \} \}$
+- ......
+
+总之 $\mu$ 就是表示这种递归类型。例如我们常用的链表结构体，内部有指向自己的指针。
+
 
