@@ -74,9 +74,16 @@ $$
 
 ### SimpleSub的三种简化方式
 
-这里我们进一步分析SimpleSub论文第4.3章里面提到的简化算法。
+**概述**：其实结合SimpleSub代码，真正实现出来的简化操作按顺序总结如下：
 
-作为背景，我们回忆类型变量是干什么用的。类型变量通常给**多态**函数使用，对应的是数据流边。如果就是普通的类型的话，是不会有类型变量的。
+1. CompactType 平坦化操作，将类型的上下界展开。这个阶段会把类型展开为特殊的表示，用新的数据结构CompactType存储。
+2. Canonicalize 规范化，这个主要针对递归类型。
+3. Co-occurrence 共现分析，这里涵盖了论文里的 去除极性变量 合并共现变量，以及和常量的共现，三种分析。
+4. hash-consing 负责折叠完全相同的递归结构。这个阶段会和转换为用于打印的语法树类型结合，即将CompactType转换为最终的类型结构。
+
+这里我们先按照论文的顺序，先分析SimpleSub论文第4.3章里面提到的简化算法。CompactType和Canonicalize放到后面再介绍。
+
+**背景**：首先回忆一下，类型变量是干什么用的。类型变量通常给**多态**函数使用，对应的是数据流边。如果就是普通的类型的话，是不会有类型变量的。
 
 - 不是多态的函数，参数和返回值类型都是确定的，即使函数接受一个复杂的结构体类型，返回另外一个复杂的结构体类型，里面也不会出现变量。
 - 多态函数的典型例子，比如id函数 $\lambda x.x$ ，把参数原样返回，如果传入一个整数，返回的是整数类型，传入的是字符串，返回的是字符串类型。那么我们就不能简单给参数和返回值标记成具体的类型，标记为 $int \rightarrow int$ 或者 $str \rightarrow str$ 都是错的。因此，我们引入类型变量 $\alpha$ 表示参数x的类型，将它的类型标记为 $\alpha \rightarrow \alpha$ 。表示，假如参数给定的类型是 $\alpha$ 时，返回值的类型也是 $\alpha$ 。
@@ -85,12 +92,13 @@ $$
     - 既然说，$\alpha$ 表示x的类型了，那么，既然函数还是返回x，那么整个函数的类型依然还是 $\alpha \rightarrow \alpha$ ？这个说法是错误的。因为类型推理解决这个约束的时候会产生一个替换， $\alpha^- \rightarrow \alpha^- \sqcap \{f1: int\}$ 最终推理出来的类型是 $\alpha \sqcap \{f1: int\} \rightarrow \alpha$。这代表什么含义呢？这意味着**类型变量如果有约束，总是会通过交类型或者并类型把约束单独表示，从而抽出身来变成没有约束的纯粹变量** （参考MLsub论文《Algebraic Subtyping》的5.2.3节后半部分，这里涉及了一个细节，即类型使用产生的上界约束仅影响变量的负极性（上界）的使用点）
 
 
-**简化1：去除极性变量** 因为变量仅仅在正极性，或者负极性出现，则我们可以删掉它。因为变量表示的就只是参数到返回值之间的多态类型关系。这种仅在一个方面出现的变量无法表示数据流，因此可以去掉。比如对于类型 $\alpha \sqcap \text{int} \rightarrow \text{int} \sqcup \beta$ ，直接简化成 $\text{int} \rightarrow \text{int}$ 。（TODO 怎么理解）
+**简化1：去除极性变量** 因为变量仅仅在正极性，或者负极性出现，则我们可以删掉它。因为变量表示的就只是参数到返回值之间的多态类型关系。这种仅在一个方面出现的变量无法表示数据流，因此可以去掉。比如对于类型 $\alpha \sqcap \text{int} \rightarrow \text{int} \sqcup \beta$ ，直接简化成 $\text{int} \rightarrow \text{int}$ 。
+<!-- （TODO 怎么理解） -->
 
 
 **简化2：共现分析**：如果两个变量总是在相同极性位置同时出现，则我们可以将它们合并。这里同时出现的意思是，把类型中，用 $\sqcap$ 或 $\sqcup$ 连接的部分看作一个槽位，里面可以同时存在被连接的多个变量。然后依次看正极性的所有槽位，和负极性的所有槽位，如果两个变量总是同时出现在某个槽位，则说明可以合并。
 
-从最简单的角度理解，既然变量就已经抽身成单独的纯粹变量，那么多个变量其实就没有意义了。例如，比如说对于id函数 $\lambda x.x$ 它的类型是。 如果类型推理给出类型是 $ \alpha \sqcap \beta \rightarrow \alpha \sqcup \beta$ 这也是对的，可以化简成前面的类型。
+从最简单的角度理解，既然变量就已经抽身成单独的纯粹变量，那么多个变量其实就没有意义了。例如，比如说对于id函数 $\lambda x.x$ 它的类型是 $\alpha \rightarrow \alpha$ 。 如果类型推理给出类型是 $\alpha \sqcap \beta \rightarrow \alpha \sqcup \beta$ 这也是对的，可以化简成前面的类型。
 
 但是，这里有一个坑点，**两个极性下，任意一个极性下共现即可进行合并，即使另外一个极性不共现**。例如，我们看论文里3.4章结尾提到的twice函数 twice = $\lambda f. \lambda x. f(f x)$ 。初步得到的类型是 $\alpha \sqcap (\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta) \rightarrow \beta \rightarrow \delta$ 接下来需要化简它。首先根据“简化1”去除只出现一次的 $\alpha$ 变量，都只出现一次肯定只在一个极性出现。得到 $(\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta) \rightarrow \beta \rightarrow \delta$ 。它是一个函数类型，第一个参数也是函数类型 $(\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta)$ 第二个参数是 $\beta$ 返回值类型是 $\delta$ 。
 
@@ -122,6 +130,8 @@ $$
 
 可以看到数据流完全一样！所以确实类型是一样的。
 
+TODO 从数据流的角度，再次理解上面的简化。
+
 **基于子类型定义的证明**
 
 我们尝试基于定义，证明两个解法的类型是一致的。即尝试证明 $(\beta \sqcup \gamma \rightarrow \gamma) \rightarrow \beta \rightarrow \gamma$ 等价于 $(\beta \sqcup \gamma \rightarrow \gamma \sqcap \delta) \rightarrow \beta \rightarrow \delta$ 。我们通过证明两个类型互为对方的子类型，来证明类型等价。
@@ -146,8 +156,6 @@ $$
 **和常量的共现**：比如，变量 $\alpha$ 和 int 总是在负极性同时出现，同时也和int总是在正极性同时出现，则将这个变量替换为int类型。
 
 因为，变量 $\alpha$ 和 int 总是在负极性同时出现，则其实对应的是，之前存在约束 $\alpha \leq \text{int}$ 。同理，总是在正极性对应的是 $\text{int} \leq \alpha$ 两个合起来，不就说明 $\alpha$ 等价于int类型了。
-
-**代码中的简化：CompactType**：当我们遇到类型：`{x: A} ∧ {x: B; y: C}`的时候，我们可以进一步合并结构体类型，变成 `{x: A ∧ B; y: C}`。它会让后续的共现分析更准确
 
 **简化方法3：哈希合并（Hash Consing）**：这个方法是SimpleSub特有的，MLsub没有进行这一步。这个涉及递归类型。
 
@@ -179,4 +187,86 @@ $$
 
 总之 $\mu$ 就是表示这种递归类型。例如我们常用的链表结构体，内部有指向自己的指针。
 
+经过前面的简化之后，有下面的类型。
 
+```
+('o → {self: 'q; thing: 'o})
+其中'q是递归类型：
+  'q = {self: 'q; thing: 'o}
+```
+
+匹配的时候不仅会匹配变量，对于递归类型也会匹配相同的递归结构。即维护一个从CompactType到变量的映射。（对应代码中coalesceCompactType函数）比如对于上面的类型，我们进行递归访问。首先访问整体的函数类型，然后访问函数的参数类型（即`'o`），然后访问函数体了，放入map中`{self: 'q; thing: 'o}`。然后我们递归访问成员，访问self成员，访问到`'q`的时候，我们发现它是递归变量，因此我们访问它等价的递归类型。此时我们发现，又访问到了`{self: 'q; thing: 'o}`，和前面的一致！因此我们为它创建一个专门的递归变量，比如`μ0`。然后返回作为
+
+### 类型优化的具体细节
+
+具体到代码的话，其实还有一些论文中没有写出来的细节。
+这里介绍CompactType和Canonicalize，即在优化之前的平坦化和规范化操作。
+
+
+**类型平坦化：CompactType**：当我们遇到类型：`{x: A} ∧ {x: B; y: C}`的时候，我们可以进一步合并结构体类型，变成 `{x: A ∧ B; y: C}`。它会让后续的共现分析更准确
+
+下面是CompactType的定义：
+
+```cpp
+// Intermediate representation for simplification (Section 4.4)
+struct CompactType {
+  std::set<SimpleType> vars;                          // type variables
+  std::set<SimpleType, SimpleTypeValueCompare> prims; // primitive types
+  std::optional<std::map<std::string, std::shared_ptr<CompactType>>>
+      record; // record fields
+  std::optional<std::pair<std::vector<std::shared_ptr<CompactType>>, std::shared_ptr<CompactType>>>
+      function; // function type
+};
+```
+
+CompactType本身可以看作一个很大的集合，里面归类放置了各种类型。我们回忆之前，SimpleType核心类型推理结构，它其实并不是我们常见的基于语法树的类型，而是有上下界指向其他类型。如果我们单看变量类型的一个界，比如上界，
+
+```cpp
+struct VariableState {
+  std::vector<SimpleType> lowerBounds;
+  std::vector<SimpleType> upperBounds; // CompactType即分类整理数组里的类型
+};
+```
+
+其实含义是，所有上界指向的类型，全部用类型交运算连接起来。那么就是把这个上界数组里的类型，分类整理了起来。保存成上面那种集合的样子。根据所处位置的极性，表示类型交运算或者并运算。
+
+同理，因为我们会展开结构体和函数类型，比如`{x: A} ∧ {x: B; y: C}`展开成`{x: A ∧ B; y: C}`，所以这里对于结构体类型，并不是也保存成集合，而是保存为单独的CompactType，因为即使有很多结构体，也会合并起来变成一个，然后在结构体内部再用类型交运算或者并运算。
+
+这样转换为Compact类型的过程也非常直接。
+<!-- TODO 贴代码展示？ -->
+
+**类型规范化：Canonicalize**：
+
+
+
+## FAQ
+
+**Q1:** 比如我有一个函数，原始参数类型就是Animal。传递参数的两个时候是分别传入了Dog，传入了Cat。那么我是不是有 `func_in <= Dog` 和 `func_in <= cat`。那么为什么求交类型运算 `^` 只出现在负极性处，而不是并运算？（Dog 并 Cat = Animal，Dog 交 Cat = Bottom）
+
+Answer 1: 
+
+- 参数类型之所以是 animal，是因为后面当 animal 用，而不是因为传进来什么，不用的话，甚至可以当 top。
+- 参数是负极性，所以是看使用。如果后面返回了参数这个值，返回值就会因为数据流把这两个约束拿过来。
+
+MLsub 原文处理约束就是，把负极性到正极性的约束连成数据流，正极性到负极性的约束才看作约束。约束可以随便生成，但是求类型的时候，负极性顺着数据流收集，正极性逆着数据流收集，不管另外一个方向。另外一个方向，因为连了数据流，数据流是负极性到正极性的，会传给另一头。总结：负极性 顺着数据流收集上界。正极性逆着数据流收集下界。
+
+**Q2: 类型的交和并怎么理解来着？**
+
+Answer 2: 实际程序执行的时候都是具体的值，而类型对应的是所有可能的值的集合。比如说程序执行的时候都是具体的数字，而我们用int类型表示所有int类型能存的有具体数字的集合。然后子类型相比父类型更精确，即集合范围更小。比如我们根据上面的`Animal，Dog, Cat`创建类型：
+
+- Top类型，它包含所有可能的值，甚至包括冲突的值，比如结构体类型，和整数，和浮点数。它的集合最大，是所有类型的父类型。
+- Animal类型，它表示所有动物的集合
+- Dog类型, Cat类型，它表示所有具体的猫和狗的集合。
+- Bottom类型，对应空集合，没有任何具体值的类型，通常不会出现。
+
+可以观察到：
+
+- 集合之间的子集关系，就是子类型关系。比如`Dot <= Animal`，即Dog是Animal的子类型，对应Dog是Animal的子集
+- 集合越小，越靠近子类型。
+- 类型的并（Join, v），即求最小公共上界，会往父类型走。
+- 类型的交（Meet, v），即最大公共下节，会往子类型走。
+
+但是要注意：
+
+- 类型的并集 对应 结构体成员的交集
+- 类型的交集 对应 结构体成员的并集
